@@ -8,6 +8,10 @@ func randGender() string {
 	return g
 }
 
+func inBlacklist(name string) bool {
+	return blacklistNames[name]
+}
+
 func firstName(gender string) string {
 	return lookup(lang, gender+"_first_names", true)
 }
@@ -74,7 +78,15 @@ func suffix(gender string) string {
 }
 
 func fullNameWithPrefix(gender string) string {
-	return join(prefix(gender), firstName(gender), lastName(gender))
+	name := ""
+	for {
+		name = join(prefix(gender), firstName(gender), lastName(gender))
+		if inBlacklist(name) {
+			continue
+		}
+		break
+	}
+	return name
 }
 
 // MaleFullNameWithPrefix generates prefixed male full name
@@ -118,14 +130,23 @@ func FullNameWithSuffix() string {
 }
 
 func fullName(gender string) string {
-	switch r.Intn(10) {
-	case 0:
-		return fullNameWithPrefix(gender)
-	case 1:
-		return fullNameWithSuffix(gender)
-	default:
-		return join(firstName(gender), lastName(gender))
+	name := ""
+	for {
+		switch r.Intn(10) {
+		case 0:
+			name = fullNameWithPrefix(gender)
+		case 1:
+			name = fullNameWithSuffix(gender)
+		default:
+			name = join(firstName(gender), lastName(gender))
+		}
+
+		if inBlacklist(name) {
+			continue
+		}
+		break
 	}
+	return name
 }
 
 // MaleFullName generates male full name
