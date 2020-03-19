@@ -132,15 +132,7 @@ func FullNameWithSuffix() string {
 func fullName(gender string) string {
 	name := ""
 	for {
-		switch r.Intn(10) {
-		case 0:
-			name = fullNameWithPrefix(gender)
-		case 1:
-			name = fullNameWithSuffix(gender)
-		default:
-			name = join(firstName(gender), lastName(gender))
-		}
-
+		name = join(firstName(gender), lastName(gender))
 		if inBlacklist(name) {
 			continue
 		}
