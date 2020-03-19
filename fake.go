@@ -39,7 +39,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -63,11 +62,11 @@ var enFallback = true
 var availLangs = GetLangs()
 
 var blacklistNamesFiles = []string{
-	"data/blacklists/us_presidents",
-	"data/blacklists/us_senators",
-	"data/blacklists/hollywood_walk_of_fame",
-	"data/blacklists/fortune_celebrity_100",
-	"data/blacklists/us_house_of_representatives",
+	"us_presidents",
+	"us_senators",
+	"hollywood_walk_of_fame",
+	"fortune_celebrity_100",
+	"us_house_of_representatives",
 }
 
 var (
@@ -105,7 +104,7 @@ func (s *rndSrc) Seed(n int64) {
 func GetLangs() []string {
 	var langs []string
 	for k, v := range data {
-		if v.isDir && k != "/" && k != "/data" {
+		if v.isDir && k != "/" && k != "/data" && !strings.Contains(k, "blacklists") {
 			langs = append(langs, strings.Replace(k, "/data/", "", 1))
 		}
 	}
@@ -228,23 +227,15 @@ func readFile(lang, cat string) ([]byte, error) {
 func loadBlacklistNamesIfEmpty() {
 	if len(blacklistNames) == 0 {
 		for _, f := range blacklistNamesFiles {
-			file, err := os.Open(f)
+			data, err := readFile("blacklists", f)
 			if err != nil {
 				continue
 			}
 
-			data, err := ioutil.ReadAll(file)
-
-			if err != nil {
-				continue
-			}
 			names := strings.Split(strings.TrimSpace(string(data)), "\n")
-
 			for _, name := range names {
 				blacklistNames[name] = true
 			}
-
-			file.Close()
 		}
 	}
 }
