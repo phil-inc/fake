@@ -50,14 +50,24 @@ import (
 
 // cat/subcat/lang/samples
 type samplesTree map[string]map[string][]string
+type blacklistNamesTree map[string]bool
 
 var samplesLock sync.Mutex
 var samplesCache = make(samplesTree)
+var blacklistNames = make(blacklistNamesTree)
 var r = rand.New(&rndSrc{src: rand.NewSource(time.Now().UnixNano())})
 var lang = "en"
 var useExternalData = false
 var enFallback = true
 var availLangs = GetLangs()
+
+var blacklistNamesFiles = []string{
+	"us_presidents",
+	"us_senators",
+	"hollywood_walk_of_fame",
+	"fortune_celebrity_100",
+	"us_house_of_representatives",
+}
 
 var (
 	// ErrNoLanguageFn is the error that indicates that given language is not available
@@ -94,7 +104,7 @@ func (s *rndSrc) Seed(n int64) {
 func GetLangs() []string {
 	var langs []string
 	for k, v := range data {
-		if v.isDir && k != "/" && k != "/data" {
+		if v.isDir && k != "/" && k != "/data" && !strings.Contains(k, "blacklists") {
 			langs = append(langs, strings.Replace(k, "/data/", "", 1))
 		}
 	}
@@ -163,6 +173,7 @@ func generate(lang, cat string, fallback bool) string {
 func lookup(lang, cat string, fallback bool) string {
 	samplesLock.Lock()
 	s := _lookup(lang, cat, fallback)
+	loadBlacklistNamesIfEmpty()
 	samplesLock.Unlock()
 	return s
 }
@@ -211,4 +222,20 @@ func readFile(lang, cat string) ([]byte, error) {
 	defer file.Close()
 
 	return ioutil.ReadAll(file)
+}
+
+func loadBlacklistNamesIfEmpty() {
+	if len(blacklistNames) == 0 {
+		for _, f := range blacklistNamesFiles {
+			data, err := readFile("blacklists", f)
+			if err != nil {
+				continue
+			}
+
+			names := strings.Split(strings.TrimSpace(string(data)), "\n")
+			for _, name := range names {
+				blacklistNames[name] = true
+			}
+		}
+	}
 }
